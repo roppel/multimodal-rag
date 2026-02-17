@@ -1,0 +1,72 @@
+{
+  "red_running_shoes.jpg": {
+    "name": "Running Shoes",
+    "color": "red",
+    "description": "Red athletic running shoes, lightweight mesh material, excellent for marathon training",
+    "category": "footwear",
+    "price": 120
+  },
+  "white_sneakers.jpg": {
+    "name": "Sneakers",
+    "color": "white",
+    "description": "Classic white leather sneakers, versatile casual style",
+    "category": "footwear",
+    "price": 85
+  },
+  "brown_boots.jpg": {
+    "name": "Hiking Boots",
+    "color": "brown",
+    "description": "Durable waterproof hiking boots with ankle support",
+    "category": "footwear",
+    "price": 150
+  },
+  "black_office_chair.jpg": {
+    "name": "Office Chair",
+    "color": "black",
+    "description": "Ergonomic office chair with lumbar support and adjustable height",
+    "category": "furniture",
+    "price": 299
+  },
+  "blue_armchair.jpg": {
+    "name": "Armchair",
+    "color": "blue",
+    "description": "Modern blue velvet armchair, mid-century design, comfortable padding",
+    "category": "furniture",
+    "price": 450
+  },
+  "wooden_table.jpg": {
+    "name": "Dining Table",
+    "color": "wood",
+    "description": "Solid oak dining table seats 6, rustic farmhouse style",
+    "category": "furniture",
+    "price": 799
+  },
+  "silver_laptop.jpg": {
+    "name": "Laptop",
+    "color": "silver",
+    "description": "15-inch laptop, 16GB RAM, fast SSD, perfect for software development",
+    "category": "electronics",
+    "price": 1299
+  },
+  "smartphone.jpg": {
+    "name": "Smartphone",
+    "color": "black",
+    "description": "Latest smartphone with 5G, excellent camera system",
+    "category": "electronics",
+    "price": 899
+  },
+  "white_headphones.jpg": {
+    "name": "Headphones",
+    "color": "white",
+    "description": "Noise-canceling wireless headphones, 30-hour battery life",
+    "category": "electronics",
+    "price": 249
+  },
+  "gray_backpack.jpg": {
+    "name": "Backpack",
+    "color": "gray",
+    "description": "Durable travel backpack with laptop compartment, water-resistant",
+    "category": "accessories",
+    "price": 89
+  }
+}

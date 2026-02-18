@@ -1,83 +1,93 @@
-# Multi-Modal RAG System
+# Multi-Modal RAG with Intelligent Search
 
-A production-ready Retrieval-Augmented Generation system that searches across both images and text using vision models and semantic embeddings.
+A production-ready Retrieval-Augmented Generation system that searches across images and text with automatic query understanding and hybrid search architecture.
 
 ## Overview
 
-This project demonstrates advanced RAG patterns by combining:
-- **Vision AI** (GPT-4 Vision) for image understanding
-- **Text embeddings** for semantic search
-- **Multi-modal retrieval** across different data types
-- **Systematic evaluation** with precision/recall metrics
+This project demonstrates advanced RAG patterns through iterative improvement:
+1. **Baseline**: Semantic search only (59% F1)
+2. **Hybrid Search**: Added metadata filtering (86% F1, +27 points)
+3. **Smart Search**: Automatic filter extraction (83% F1, end-to-end)
+
+The system uses GPT-4 Vision to understand images, combines semantic embeddings with structured metadata, and automatically extracts search filters from natural language queries.
+
+## Key Features
+
+- ✅ **Multi-modal search** across images and text descriptions
+- ✅ **Vision AI integration** using GPT-4 Vision for image analysis
+- ✅ **Automatic filter extraction** from natural language queries
+- ✅ **Hybrid search architecture** combining exact matching + semantic search
+- ✅ **Systematic evaluation** with precision, recall, and F1 metrics
+- ✅ **Production-ready** error handling and modular design
 
 ## Architecture
 
 ```
-Query → Embedding Model
-         ↓
-    Vector Search (ChromaDB)
-         ↓
-    [Text Results] + [Image Results]
-         ↓
-    LLM (GPT-4) → Answer
+User Query: "Show me red shoes under $150"
+    ↓
+Filter Extraction (GPT-4 mini)
+    → Extracts: {color: "red", category: "footwear", price: {$lt: 150}}
+    ↓
+Hybrid Search
+    → Step 1: Filter products by metadata (exact match)
+    → Step 2: Semantic search within filtered results (embeddings)
+    ↓
+Results: Red running shoes ($120) ✓
 ```
 
 ### Components
 
-1. **Image Processing**: GPT-4 Vision analyzes product images and generates detailed visual descriptions
-2. **Dual Embeddings**: Separate vector spaces for text metadata and visual descriptions
-3. **Multi-Modal Search**: Queries search both text and image embeddings simultaneously
-4. **RAG Pipeline**: Retrieved context feeds into LLM for natural language responses
+1. **Vision Analysis**: GPT-4 Vision generates detailed descriptions of product images
+2. **Filter Extraction**: GPT-4 mini extracts structured filters from natural language
+3. **Dual Embeddings**: Separate vector spaces for text metadata and visual descriptions
+4. **Hybrid Search**: Combines metadata filters (category, color, price) with semantic search
+5. **Evaluation Framework**: Systematic testing with ground truth labels
 
-## Features
+## Performance Evolution
 
-- ✅ Real image understanding (not just metadata)
-- ✅ Semantic search across text and visual data
-- ✅ Configurable search modes (text-only, image-only, or both)
-- ✅ Systematic evaluation framework with metrics
-- ✅ Production-ready error handling and logging
+### Baseline (Semantic Search Only)
+```
+Average F1: 59%
+- Category queries: 100%
+- Visual features: 63%
+- Color queries: 53%
+- Use case queries: 43%
+```
 
-## Performance Metrics
+**Problem**: Semantic search alone couldn't handle exact requirements like "white products" or "under $300"
 
-Based on 14 test queries across different categories:
+### Hybrid Search (Manual Filters)
+```
+Average F1: 86% (+27 points)
+- Category queries: 100%
+- Color + category: 100%
+- Price filtering: 100%
+- Color queries: 82%
+```
 
-| Metric | Score |
-|--------|-------|
-| **Precision** | 50.0% |
-| **Recall** | 78.6% |
-| **F1 Score** | 58.6% |
+**Improvement**: Combining exact metadata filters with semantic search dramatically improved accuracy
 
-### Performance by Query Type
+### Smart Search (Auto Filter Extraction)
+```
+Average F1: 83% (+24 points from baseline)
+- Category queries: 100%
+- Color + category: 100%
+- Price filtering: 83%
+- Color queries: 83%
+```
 
-| Query Type | F1 Score | Examples |
-|------------|----------|----------|
-| Category-based | 100% | "Show me footwear", "What furniture?" |
-| Visual features | 63% | "Items with laces", "Products with straps" |
-| Color-based | 53% | "Show me red products" |
-| Use case | 43% | "What can I use for running?" |
-
-### Key Insights
-
-**Strengths:**
-- Excellent at direct category matching
-- Strong visual feature detection (laces, straps)
-- Perfect recall on well-defined categories
-
-**Limitations:**
-- Struggles with abstract use-case inference ("music" → headphones)
-- Moderate accuracy on subtle visual properties (shiny, metallic)
-- Needs improvement on complex color queries
+**Achievement**: Fully automatic end-to-end system with minimal accuracy drop vs manual filters
 
 ## Installation
 
 ```bash
 # Clone repository
-git clone <your-repo-url>
+git clone https://github.com/roppel/multimodal-rag.git
 cd multimodal-rag
 
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -92,34 +102,14 @@ pip install -r requirements.txt
 export OPENAI_API_KEY='your-key-here'
 ```
 
-3. **Download product images:**
+3. **Download product images** (or use your own):
 ```bash
 python download_real_images.py
 ```
 
 ## Usage
 
-### Basic Demo
-
-```bash
-python main.py
-```
-
-Runs the system with pre-defined test queries and shows results.
-
-### Run Evaluation
-
-```bash
-python eval.py
-```
-
-Evaluates system performance on 14 test queries with ground truth labels. Outputs:
-- Per-query precision, recall, F1
-- Overall metrics
-- Performance breakdown by query type
-- Results saved to `eval_results.json`
-
-### Custom Queries
+### Basic Search
 
 ```python
 from main import MultiModalRAG
@@ -127,33 +117,69 @@ from main import MultiModalRAG
 rag = MultiModalRAG()
 rag.index_data()
 
-# Search across both text and images
-results = rag.search("Show me red shoes", n_results=3)
+# Semantic search only
+results = rag.search("running shoes", n_results=3)
 
-# Text-only search
-results = rag.search("electronics", search_images=False)
+# Hybrid search with manual filters
+results = rag.hybrid_search(
+    "athletic footwear",
+    filters={"category": "footwear", "color": "red"}
+)
 
-# Get natural language answer
-response = rag.answer_question("What furniture do you have?")
-print(response['answer'])
+# Smart search with automatic filter extraction
+results = rag.smart_search("Show me red shoes under $150")
+# Automatically extracts: {color: "red", category: "footwear", price: {$lt: 150}}
+```
+
+### Run Evaluations
+
+```bash
+# Baseline semantic search
+python eval.py
+
+# Hybrid search with manual filters
+python eval_hybrid.py
+
+# Smart search with auto filter extraction
+python eval_smart.py
+```
+
+## Example: Auto Filter Extraction
+
+```python
+Query: "Show me red footwear"
+→ Filters: {'color': 'red', 'category': 'footwear'}
+→ Result: red_running_shoes.jpg (100% accuracy)
+
+Query: "What electronics under $300?"
+→ Filters: {'category': 'electronics', 'price': {'$lt': 300}}
+→ Result: white_headphones.jpg (100% accuracy)
+
+Query: "white products"
+→ Filters: {'color': 'white'}
+→ Results: white_sneakers.jpg, white_headphones.jpg (100% accuracy)
 ```
 
 ## Project Structure
 
 ```
 multimodal-rag/
-├── main.py                    # Core multi-modal RAG system
-├── eval.py                    # Evaluation framework
-├── download_real_images.py    # Dataset preparation
-├── requirements.txt           # Dependencies
-├── README.md                  # This file
-├── images/                    # Product images
+├── main.py                      # Core multi-modal RAG system
+├── eval.py                      # Baseline evaluation
+├── eval_hybrid.py               # Hybrid search evaluation
+├── eval_smart.py                # Smart search evaluation
+├── download_real_images.py      # Dataset preparation
+├── requirements.txt             # Dependencies
+├── README.md                    # This file
+├── images/                      # Product images
 │   ├── red_running_shoes.jpg
 │   ├── white_sneakers.jpg
 │   └── ...
 ├── data/
-│   └── descriptions.json      # Product metadata
-└── eval_results.json          # Evaluation metrics
+│   └── descriptions.json        # Product metadata
+├── eval_results.json            # Baseline metrics
+├── hybrid_eval_results.json     # Hybrid search metrics
+└── smart_eval_results.json      # Smart search metrics
 ```
 
 ## Technical Details
@@ -161,64 +187,86 @@ multimodal-rag/
 ### Embedding Model
 - **Model**: `all-MiniLM-L6-v2` (SentenceTransformers)
 - **Dimension**: 384
-- **Speed**: ~1ms per embedding
 - **Use**: Both text and visual descriptions
 
 ### Vision Model
 - **Model**: GPT-4 Vision (gpt-4o)
 - **Purpose**: Generate visual descriptions from images
-- **Processing**: ~2-3 seconds per image
 - **Output**: Detailed text descriptions of visual features
+
+### Filter Extraction
+- **Model**: GPT-4 mini (gpt-4o-mini)
+- **Purpose**: Extract structured filters from natural language
+- **Output**: JSON with category, color, price filters
 
 ### Vector Database
 - **Database**: ChromaDB (in-memory)
 - **Collections**: Separate for text and images
-- **Search**: Cosine similarity
-- **Retrieval**: Configurable top-k results
+- **Search**: Cosine similarity with metadata filtering
 
 ## What I Learned
 
-### Technical Skills
-- How vision models process and understand images
-- Multi-modal embedding strategies
-- Evaluation methodology for AI systems
-- Production RAG architecture patterns
+### Technical Insights
+
+1. **Hybrid > Pure ML**: Combining exact filters with semantic search improves accuracy by 27 points
+2. **Automatic extraction works**: LLM-based filter extraction achieves 83% F1 with minimal drop vs manual
+3. **Multi-modal embeddings**: Text descriptions of images work well for visual search
+4. **Evaluation is critical**: Systematic testing reveals where systems fail
 
 ### Key Takeaways
-1. **Multi-modal RAG isn't magic** - works best for direct visual matching, struggles with abstract reasoning
-2. **Evaluation is critical** - measuring accuracy reveals where systems succeed/fail
-3. **Hybrid approaches win** - combining structured metadata with semantic search improves results
-4. **Vision models are good but imperfect** - catch obvious features, miss subtle details
+
+- **Don't over-rely on AI**: Use structured data (metadata) when available
+- **Iterate based on metrics**: Each improvement was driven by evaluation results
+- **Production patterns matter**: Hybrid search + auto extraction = production-ready
+- **Vision AI is practical**: GPT-4 Vision accurately describes images for semantic search
 
 ## Improvements for Production
 
-To achieve higher accuracy, consider:
+To achieve even higher accuracy:
 
-1. **Hybrid search**: Combine vector search with structured filters (price, category)
-2. **Query classification**: Route queries to text-only vs multi-modal search based on type
-3. **Fine-tuned embeddings**: Train custom embedding model on domain-specific data
-4. **Ensemble retrieval**: Combine multiple retrieval strategies and re-rank
-5. **User feedback loop**: Learn from corrections to improve over time
+1. **Better filter extraction**: Fine-tune a model specifically for query parsing
+2. **Expanded metadata**: Add more structured fields (brand, material, size)
+3. **Reranking**: Use a cross-encoder to rerank final results
+4. **User feedback**: Learn from user interactions to improve over time
+5. **Larger dataset**: More products would better demonstrate scalability
 
-## Use Cases
+## Real-World Applications
 
 This architecture applies to:
-- **E-commerce**: Search products by appearance and description
+- **E-commerce**: Search products by appearance and specifications
 - **Digital asset management**: Find images and documents semantically
 - **Healthcare**: Search medical images with accompanying reports
-- **Real estate**: Find properties by visual features and specs
+- **Real estate**: Find properties by visual features and structured data
 - **Manufacturing**: Locate parts by photos and specifications
 
-## Cost
+## Performance Metrics
 
-Running the evaluation (~15 images, 14 queries):
-- **GPT-4 Vision calls**: ~$0.20
-- **Embedding generation**: Free (local)
-- **Storage**: Negligible
+| Approach | Precision | Recall | F1 Score | Improvement |
+|----------|-----------|--------|----------|-------------|
+| Baseline (semantic) | 50.0% | 78.6% | 58.6% | - |
+| Hybrid (manual) | 87.5% | 87.5% | 85.8% | +27 pts |
+| Smart (auto) | 90.0% | 80.0% | 83.3% | +24 pts |
 
-Production scaling:
-- 1000 images: ~$2-3 for initial indexing
-- 10K queries/month: ~$5-10 in API costs
+## Cost Analysis
+
+**Development/Testing** (10 products, 30 queries):
+- GPT-4 Vision (image analysis): ~$0.30
+- GPT-4 mini (filter extraction): ~$0.05
+- Embedding generation: Free (local)
+- **Total**: ~$0.35
+
+**Production Scaling** (1000 products, 10K queries/month):
+- Initial indexing: ~$30
+- Monthly queries: ~$15
+- **Total**: ~$45/month
+
+## Technologies Used
+
+- **Python 3.9+**
+- **OpenAI API** (GPT-4 Vision, GPT-4 mini)
+- **SentenceTransformers** (embeddings)
+- **ChromaDB** (vector database)
+- **Pillow** (image processing)
 
 ## License
 
@@ -226,8 +274,8 @@ MIT
 
 ## Author
 
-Built as a learning project to explore multi-modal RAG patterns and ML evaluation methodology.
+Built as a learning project to explore multi-modal RAG patterns, hybrid search architectures, and ML evaluation methodology.
 
 ---
 
-**Key Learning**: Multi-modal RAG achieves 59% F1 on diverse queries. Category-based queries reach 100% accuracy, while abstract use-case inference needs improvement. Systematic evaluation reveals that combining vision AI with structured metadata is the path to production-ready accuracy.
+**Key Achievement**: Improved search accuracy from 59% to 83% F1 through systematic iteration: baseline semantic search → hybrid architecture with metadata filtering → automatic filter extraction from natural language. Demonstrates production-ready ML engineering with emphasis on evaluation-driven improvement.

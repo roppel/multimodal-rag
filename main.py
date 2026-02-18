@@ -177,6 +177,82 @@ class MultiModalRAG:
 
         return results
 
+    def hybrid_search(self, query, n_results=3, filters=None, search_images=True, search_text=True):
+        """
+        Hybrid search: combine metadata filtering with semantic search
+
+        Args:
+            query: Search query string
+            n_results: Number of results to return
+            filters: Dict of metadata filters, e.g., {"color": "red", "category": "footwear"}
+            search_images: Whether to search image descriptions
+            search_text: Whether to search text descriptions
+        """
+        query_embedding = self.text_embedder.encode(query).tolist()
+
+        results = {
+            "query": query,
+            "filters": filters,
+            "text_results": [],
+            "image_results": []
+        }
+
+        # Build where clause for ChromaDB
+        where_clause = None
+        if filters:
+            where_conditions = []
+            for key, value in filters.items():
+                if isinstance(value, dict):
+                    # Handle range queries like {"$lt": 300}
+                    where_conditions.append({key: value})
+                else:
+                    # Handle exact matches
+                    where_conditions.append({key: {"$eq": value}})
+
+            # Combine conditions with AND
+            if len(where_conditions) == 1:
+                where_clause = where_conditions[0]
+            else:
+                where_clause = {"$and": where_conditions}
+
+        # Search text descriptions with filters
+        if search_text:
+            try:
+                text_results = self.text_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results * 2,  # Get more results to account for filtering
+                    where=where_clause
+                )
+
+                for i in range(min(n_results, len(text_results['ids'][0]))):
+                    results["text_results"].append({
+                        "content": text_results['documents'][0][i],
+                        "metadata": text_results['metadatas'][0][i],
+                        "distance": text_results['distances'][0][i]
+                    })
+            except Exception as e:
+                print(f"Text search error: {e}")
+
+        # Search images with filters
+        if search_images:
+            try:
+                image_results = self.image_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results * 2,
+                    where=where_clause
+                )
+
+                for i in range(min(n_results, len(image_results['ids'][0]))):
+                    results["image_results"].append({
+                        "visual_description": image_results['documents'][0][i],
+                        "metadata": image_results['metadatas'][0][i],
+                        "distance": image_results['distances'][0][i]
+                    })
+            except Exception as e:
+                print(f"Image search error: {e}")
+
+        return results
+
     def answer_question(self, query):
         """Use RAG to answer a question about products"""
         # Get relevant context

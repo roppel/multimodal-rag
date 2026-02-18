@@ -1,0 +1,204 @@
+{
+  "overall": {
+    "precision": 0.875,
+    "recall": 0.875,
+    "f1": 0.8583333333333334,
+    "improvement_over_baseline": 26.833333333333343
+  },
+  "by_category": {
+    "color + category": 1.0,
+    "category": 1.0,
+    "color": 0.8222222222222223,
+    "category + price": 1.0,
+    "use case": 0.4
+  },
+  "detailed_results": [
+    {
+      "query": "Show me red footwear",
+      "filters": {
+        "color": "red",
+        "category": "footwear"
+      },
+      "category": "color + category",
+      "expected": [
+        "red_running_shoes.jpg"
+      ],
+      "predicted": [
+        "red_running_shoes.jpg"
+      ],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "query": "What furniture is available?",
+      "filters": {
+        "category": "furniture"
+      },
+      "category": "category",
+      "expected": [
+        "black_office_chair.jpg",
+        "blue_armchair.jpg",
+        "wooden_table.jpg"
+      ],
+      "predicted": [
+        "black_office_chair.jpg",
+        "wooden_table.jpg",
+        "blue_armchair.jpg"
+      ],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "query": "Show me white products",
+      "filters": {
+        "color": "white"
+      },
+      "category": "color",
+      "expected": [
+        "white_sneakers.jpg",
+        "white_headphones.jpg"
+      ],
+      "predicted": [
+        "white_headphones.jpg",
+        "white_sneakers.jpg"
+      ],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "query": "What electronics under $300?",
+      "filters": {
+        "category": "electronics",
+        "price": {
+          "$lt": 300
+        }
+      },
+      "category": "category + price",
+      "expected": [
+        "white_headphones.jpg"
+      ],
+      "predicted": [
+        "white_headphones.jpg"
+      ],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    {
+      "query": "Show me brown items",
+      "filters": {
+        "color": "brown"
+      },
+      "category": "color",
+      "expected": [
+        "brown_boots.jpg",
+        "wooden_table.jpg"
+      ],
+      "predicted": [
+        "brown_boots.jpg"
+      ],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "tp": 1,
+        "fp": 0,
+        "fn": 1
+      }
+    },
+    {
+      "query": "Show me office equipment",
+      "filters": {
+        "category": "furniture"
+      },
+      "category": "use case",
+      "expected": [
+        "black_office_chair.jpg",
+        "silver_laptop.jpg"
+      ],
+      "predicted": [
+        "black_office_chair.jpg",
+        "wooden_table.jpg",
+        "blue_armchair.jpg"
+      ],
+      "metrics": {
+        "precision": 0.3333333333333333,
+        "recall": 0.5,
+        "f1": 0.4,
+        "tp": 1,
+        "fp": 2,
+        "fn": 1
+      }
+    },
+    {
+      "query": "What silver or gray products do you have?",
+      "filters": null,
+      "category": "color",
+      "expected": [
+        "silver_laptop.jpg",
+        "gray_backpack.jpg"
+      ],
+      "predicted": [
+        "silver_laptop.jpg",
+        "white_sneakers.jpg",
+        "gray_backpack.jpg"
+      ],
+      "metrics": {
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1": 0.8,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0
+      }
+    },
+    {
+      "query": "Show me footwear",
+      "filters": {
+        "category": "footwear"
+      },
+      "category": "category",
+      "expected": [
+        "red_running_shoes.jpg",
+        "white_sneakers.jpg",
+        "brown_boots.jpg"
+      ],
+      "predicted": [
+        "brown_boots.jpg",
+        "red_running_shoes.jpg",
+        "white_sneakers.jpg"
+      ],
+      "metrics": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "tp": 3,
+        "fp": 0,
+        "fn": 0
+      }
+    }
+  ]
+}

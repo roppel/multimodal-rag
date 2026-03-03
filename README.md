@@ -1,281 +1,285 @@
-# Multi-Modal RAG with Intelligent Search
+# Multi-Modal RAG for E-Commerce Search
 
-A production-ready Retrieval-Augmented Generation system that searches across images and text with automatic query understanding and hybrid search architecture.
+A production-oriented multi-modal RAG system for searching cheese products, demonstrating hybrid search architecture and systematic evaluation at scale.
 
 ## Overview
 
-This project demonstrates advanced RAG patterns through iterative improvement:
-1. **Baseline**: Semantic search only (59% F1)
-2. **Hybrid Search**: Added metadata filtering (86% F1, +27 points)
-3. **Smart Search**: Automatic filter extraction (83% F1, end-to-end)
+Built a multi-modal search system for 580 cheese products from Amazon, combining GPT-4 Vision for image analysis with semantic text search and metadata filtering. The project demonstrates scaling challenges, evaluation methodology considerations, and production ML patterns.
 
-The system uses GPT-4 Vision to understand images, combines semantic embeddings with structured metadata, and automatically extracts search filters from natural language queries.
+**Domain Context:** Leveraged experience from Cheese Express (e-commerce cheese retailer) to design realistic test queries and understand customer search patterns.
+
+---
 
 ## Key Features
 
-- ✅ **Multi-modal search** across images and text descriptions
-- ✅ **Vision AI integration** using GPT-4 Vision for image analysis
-- ✅ **Automatic filter extraction** from natural language queries
-- ✅ **Hybrid search architecture** combining exact matching + semantic search
-- ✅ **Systematic evaluation** with precision, recall, and F1 metrics
-- ✅ **Production-ready** error handling and modular design
+- **Multi-modal search**: Combines text descriptions with GPT-4 Vision analysis of product images
+- **Hybrid search architecture**: Semantic embeddings + metadata filtering (category, price, region, cheese type)
+- **Automatic filter extraction**: LLM parses natural language queries into structured filters
+- **GPT-based categorization**: Categorizes products by type, region, and category with higher accuracy than keyword matching
+- **Persistent vector storage**: ChromaDB with disk persistence for production-like deployment
+- **Systematic evaluation**: F1, precision, and recall metrics across multiple query types
+
+---
 
 ## Architecture
 
+### Search Pipeline
+
 ```
-User Query: "Show me red shoes under $150"
+User Query: "French cheese under $50"
     ↓
-Filter Extraction (GPT-4 mini)
-    → Extracts: {color: "red", category: "footwear", price: {$lt: 150}}
+1. Filter Extraction (GPT-4o-mini)
+   → {region: "french", price: {$lt: 50}}
     ↓
-Hybrid Search
-    → Step 1: Filter products by metadata (exact match)
-    → Step 2: Semantic search within filtered results (embeddings)
+2. Hybrid Search
+   a. Metadata Filter: region="french" AND price<$50
+   b. Semantic Search: embed(query) → find similar products
+   c. Combine: Top K results from filtered set
     ↓
-Results: Red running shoes ($120) ✓
+3. Results: Ranked products matching both filters and semantic similarity
 ```
 
 ### Components
 
-1. **Vision Analysis**: GPT-4 Vision generates detailed descriptions of product images
-2. **Filter Extraction**: GPT-4 mini extracts structured filters from natural language
-3. **Dual Embeddings**: Separate vector spaces for text metadata and visual descriptions
-4. **Hybrid Search**: Combines metadata filters (category, color, price) with semantic search
-5. **Evaluation Framework**: Systematic testing with ground truth labels
+- **Text Embeddings**: SentenceTransformers (all-MiniLM-L6-v2)
+- **Vision Analysis**: GPT-4 Vision for product image descriptions
+- **Vector DB**: ChromaDB with persistent storage
+- **Categorization**: GPT-4o-mini for product classification
+- **Filter Extraction**: GPT-4o-mini for query parsing
 
-## Performance Evolution
+---
 
-### Baseline (Semantic Search Only)
+## Project Evolution
+
+### Phase 1: Baseline (10 Products)
+- Manual product descriptions
+- Pure semantic search
+- **Result: 59% F1**
+- **Learning**: Works well at small scale, but limited by manual data curation
+
+### Phase 2: Scaling Challenge (580 Products)
+- Real Amazon product data
+- Keyword-based categorization
+- **Result: 17% F1**
+- **Learning**: Categorization quality is critical; keyword matching fails on diverse product titles
+
+### Phase 3: GPT Categorization (Final)
+- GPT-based product categorization
+- Multi-modal image analysis
+- **Result: 13.5% F1 (53% precision, 16% recall)**
+- **Learning**: Low recall is expected when showing top-5 from 580 products; metrics must match use case
+
+---
+
+## Results & Analysis
+
+### Final Performance
 ```
-Average F1: 59%
-- Category queries: 100%
-- Visual features: 63%
-- Color queries: 53%
-- Use case queries: 43%
+Metric                    Value
+─────────────────────────────────
+Precision@5              52.9%
+Recall                   16.2%
+F1 Score                 13.5%
+
+Query Type Performance:
+- Gift baskets:          15% F1 (100% precision, 8% recall)
+- Specific cheese:       6-50% F1 (varies by availability)
+- Regional search:       0-35% F1 (depends on dataset composition)
+- Price filtering:       2% F1 (high precision, very low recall)
 ```
 
-**Problem**: Semantic search alone couldn't handle exact requirements like "white products" or "under $300"
+### Key Findings
 
-### Hybrid Search (Manual Filters)
+**GPT Categorization Impact:**
+- Found 5-10x more relevant products than keyword matching
+- 154 cheddars identified (vs 27 with keywords)
+- 61 gift baskets (vs 2-8 with keywords)
+- 76 accessories (vs 0 with keywords)
+
+**Precision vs Recall Tradeoff:**
+- Returning 5 results from 154 cheddars yields 3% recall (unavoidable)
+- Real e-commerce faces same challenge: Amazon doesn't show all 10,000 products
+- Precision@5 (53%) more meaningful metric than total recall
+
+**What Worked:**
+- ✓ Hybrid search (filters + semantic) prevents irrelevant results
+- ✓ GPT categorization dramatically improved product classification
+- ✓ Multi-modal (text + vision) provided richer search context
+
+**What Didn't:**
+- ✗ F1 metric designed for small datasets doesn't translate to large catalogs
+- ✗ Semantic search alone insufficient without metadata filters
+- ✗ Low recall is structural (5 results / 580 products) not fixable
+
+---
+
+## Technical Implementation
+
+### Data Processing
+1. Downloaded 580 cheese products from Amazon
+2. GPT-4 Vision analysis of all product images (~$1.50)
+3. GPT-4o-mini categorization (~$0.50)
+4. Created embeddings for text + visual descriptions
+
+### Search Implementation
+```python
+# Hybrid search: filters + semantic similarity
+results = rag.smart_search(
+    query="aged cheddar under $50",
+    n_results=5
+)
+# Auto-extracts: {cheese_type: "cheddar", price: {$lt: 50}}
+# Filters products, then semantic search within results
 ```
-Average F1: 86% (+27 points)
-- Category queries: 100%
-- Color + category: 100%
-- Price filtering: 100%
-- Color queries: 82%
-```
 
-**Improvement**: Combining exact metadata filters with semantic search dramatically improved accuracy
+### Evaluation Methodology
+- 14 test queries covering gift baskets, specific cheeses, regional searches, price filtering
+- Measured precision, recall, F1 on top-5 results
+- Compared keyword vs GPT categorization approaches
 
-### Smart Search (Auto Filter Extraction)
-```
-Average F1: 83% (+24 points from baseline)
-- Category queries: 100%
-- Color + category: 100%
-- Price filtering: 83%
-- Color queries: 83%
-```
+---
 
-**Achievement**: Fully automatic end-to-end system with minimal accuracy drop vs manual filters
+## What I Learned
 
-## Installation
+### Scaling Challenges
+- Small datasets (10 products) hide problems that emerge at scale (580 products)
+- Categorization quality becomes critical with diverse, messy real-world data
+- Amazon product titles are inconsistent, requiring smarter classification than keywords
 
+### Evaluation Design
+- Traditional F1 metrics don't match large catalog e-commerce use cases
+- Precision@K more meaningful than total recall when showing limited results
+- Evaluation methodology must align with actual user experience
+
+### Production ML Patterns
+- Hybrid search (exact filters + semantic) beats pure ML for structured data
+- GPT categorization cost (~$0.001/product) worthwhile for quality improvement
+- Persistent vector storage essential for production deployment
+
+### Real-World Tradeoffs
+- Perfect recall impossible when catalog >> results shown
+- User experience optimizes for precision in top results, not finding everything
+- Metrics should reflect business goals, not academic benchmarks
+
+---
+
+## Tech Stack
+
+- **Language Models**: OpenAI GPT-4 Vision, GPT-4o-mini
+- **Embeddings**: SentenceTransformers (all-MiniLM-L6-v2, 384 dimensions)
+- **Vector Database**: ChromaDB (persistent storage)
+- **Language**: Python 3.9
+- **Dataset**: 580 Amazon cheese products with images
+
+---
+
+## Setup & Usage
+
+### Installation
 ```bash
-# Clone repository
-git clone https://github.com/roppel/multimodal-rag.git
-cd multimodal-rag
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-## Setup
-
-1. **Get OpenAI API key** from https://platform.openai.com/api-keys
-
-2. **Set environment variable:**
+### Index Products (One-time)
 ```bash
-export OPENAI_API_KEY='your-key-here'
+# Download and index 580 products (~25 min, ~$2 in API costs)
+python cheese_rag_gpt.py
 ```
 
-3. **Download product images** (or use your own):
+### Run Evaluation
 ```bash
-python download_real_images.py
+# Test system performance
+python eval_cheese_final.py
 ```
 
-## Usage
-
-### Basic Search
-
+### Example Usage
 ```python
-from main import MultiModalRAG
+from cheese_rag_gpt import CheeseRAGWithGPT
 
-rag = MultiModalRAG()
-rag.index_data()
+rag = CheeseRAGWithGPT()
 
-# Semantic search only
-results = rag.search("running shoes", n_results=3)
+# Search with automatic filter extraction
+results = rag.smart_search("French cheese under $50", n_results=5)
 
-# Hybrid search with manual filters
-results = rag.hybrid_search(
-    "athletic footwear",
-    filters={"category": "footwear", "color": "red"}
-)
-
-# Smart search with automatic filter extraction
-results = rag.smart_search("Show me red shoes under $150")
-# Automatically extracts: {color: "red", category: "footwear", price: {$lt: 150}}
+# Returns:
+# {
+#   'query': 'French cheese under $50',
+#   'filters': {'region': 'french', 'price': {'$lt': 50}},
+#   'text_results': [...],
+#   'image_results': [...]
+# }
 ```
 
-### Run Evaluations
-
-```bash
-# Baseline semantic search
-python eval.py
-
-# Hybrid search with manual filters
-python eval_hybrid.py
-
-# Smart search with auto filter extraction
-python eval_smart.py
-```
-
-## Example: Auto Filter Extraction
-
-```python
-Query: "Show me red footwear"
-→ Filters: {'color': 'red', 'category': 'footwear'}
-→ Result: red_running_shoes.jpg (100% accuracy)
-
-Query: "What electronics under $300?"
-→ Filters: {'category': 'electronics', 'price': {'$lt': 300}}
-→ Result: white_headphones.jpg (100% accuracy)
-
-Query: "white products"
-→ Filters: {'color': 'white'}
-→ Results: white_sneakers.jpg, white_headphones.jpg (100% accuracy)
-```
+---
 
 ## Project Structure
 
 ```
 multimodal-rag/
-├── main.py                      # Core multi-modal RAG system
-├── eval.py                      # Baseline evaluation
-├── eval_hybrid.py               # Hybrid search evaluation
-├── eval_smart.py                # Smart search evaluation
-├── download_real_images.py      # Dataset preparation
-├── requirements.txt             # Dependencies
-├── README.md                    # This file
-├── images/                      # Product images
-│   ├── red_running_shoes.jpg
-│   ├── white_sneakers.jpg
-│   └── ...
-├── data/
-│   └── descriptions.json        # Product metadata
-├── eval_results.json            # Baseline metrics
-├── hybrid_eval_results.json     # Hybrid search metrics
-└── smart_eval_results.json      # Smart search metrics
+├── main.py                          # Core MultiModalRAG base class
+├── cheese_rag_gpt.py               # Indexing with GPT categorization
+├── eval_cheese_final.py            # Evaluation script
+├── README.md                        # This file
+├── requirements.txt                # Python dependencies
+├── .gitignore                      # Excludes chroma_db/, venv/, etc.
+│
+├── cheese_data/
+│   ├── descriptions.json           # Original 580 product metadata
+│   ├── categorized_gpt_indexed.json # GPT-categorized products
+│   └── images/                     # 580 product images (not in git)
+│
+└── chroma_db/                      # Persistent vector storage (not in git)
 ```
-
-## Technical Details
-
-### Embedding Model
-- **Model**: `all-MiniLM-L6-v2` (SentenceTransformers)
-- **Dimension**: 384
-- **Use**: Both text and visual descriptions
-
-### Vision Model
-- **Model**: GPT-4 Vision (gpt-4o)
-- **Purpose**: Generate visual descriptions from images
-- **Output**: Detailed text descriptions of visual features
-
-### Filter Extraction
-- **Model**: GPT-4 mini (gpt-4o-mini)
-- **Purpose**: Extract structured filters from natural language
-- **Output**: JSON with category, color, price filters
-
-### Vector Database
-- **Database**: ChromaDB (in-memory)
-- **Collections**: Separate for text and images
-- **Search**: Cosine similarity with metadata filtering
-
-## What I Learned
-
-### Technical Insights
-
-1. **Hybrid > Pure ML**: Combining exact filters with semantic search improves accuracy by 27 points
-2. **Automatic extraction works**: LLM-based filter extraction achieves 83% F1 with minimal drop vs manual
-3. **Multi-modal embeddings**: Text descriptions of images work well for visual search
-4. **Evaluation is critical**: Systematic testing reveals where systems fail
-
-### Key Takeaways
-
-- **Don't over-rely on AI**: Use structured data (metadata) when available
-- **Iterate based on metrics**: Each improvement was driven by evaluation results
-- **Production patterns matter**: Hybrid search + auto extraction = production-ready
-- **Vision AI is practical**: GPT-4 Vision accurately describes images for semantic search
-
-## Improvements for Production
-
-To achieve even higher accuracy:
-
-1. **Better filter extraction**: Fine-tune a model specifically for query parsing
-2. **Expanded metadata**: Add more structured fields (brand, material, size)
-3. **Reranking**: Use a cross-encoder to rerank final results
-4. **User feedback**: Learn from user interactions to improve over time
-5. **Larger dataset**: More products would better demonstrate scalability
-
-## Real-World Applications
-
-This architecture applies to:
-- **E-commerce**: Search products by appearance and specifications
-- **Digital asset management**: Find images and documents semantically
-- **Healthcare**: Search medical images with accompanying reports
-- **Real estate**: Find properties by visual features and structured data
-- **Manufacturing**: Locate parts by photos and specifications
-
-## Performance Metrics
-
-| Approach | Precision | Recall | F1 Score | Improvement |
-|----------|-----------|--------|----------|-------------|
-| Baseline (semantic) | 50.0% | 78.6% | 58.6% | - |
-| Hybrid (manual) | 87.5% | 87.5% | 85.8% | +27 pts |
-| Smart (auto) | 90.0% | 80.0% | 83.3% | +24 pts |
-
-## Cost Analysis
-
-**Development/Testing** (10 products, 30 queries):
-- GPT-4 Vision (image analysis): ~$0.30
-- GPT-4 mini (filter extraction): ~$0.05
-- Embedding generation: Free (local)
-- **Total**: ~$0.35
-
-**Production Scaling** (1000 products, 10K queries/month):
-- Initial indexing: ~$30
-- Monthly queries: ~$15
-- **Total**: ~$45/month
-
-## Technologies Used
-
-- **Python 3.9+**
-- **OpenAI API** (GPT-4 Vision, GPT-4 mini)
-- **SentenceTransformers** (embeddings)
-- **ChromaDB** (vector database)
-- **Pillow** (image processing)
-
-## License
-
-MIT
-
-## Author
-
-Built as a learning project to explore multi-modal RAG patterns, hybrid search architectures, and ML evaluation methodology.
 
 ---
 
-**Key Achievement**: Improved search accuracy from 59% to 83% F1 through systematic iteration: baseline semantic search → hybrid architecture with metadata filtering → automatic filter extraction from natural language. Demonstrates production-ready ML engineering with emphasis on evaluation-driven improvement.
+## Future Improvements
+
+If continuing this project, potential enhancements:
+
+1. **Reranking**: Two-stage retrieval (retrieve 20, rerank to top 5) could improve precision
+2. **Better embeddings**: Larger models (768-dim) or domain-specific embeddings
+3. **Query expansion**: "aged" → ["aged", "mature", "sharp", "extra sharp"]
+4. **Manual labeling**: Verify/correct categorization for 100-200 key products
+5. **Different metrics**: NDCG, MRR better suited for ranking evaluation
+6. **Larger dataset**: 1000+ products to surface additional scaling challenges
+
+---
+
+## Cost Analysis
+
+### Development Costs
+- GPT-4 Vision (580 images): ~$1.50
+- GPT-4o-mini categorization (580 products): ~$0.50
+- Filter extraction (testing): ~$0.20
+- **Total: ~$2.20**
+
+### Production Estimate (hypothetical)
+- Monthly searches: 10,000
+- Filter extraction: $0.20/1000 queries = $2/month
+- Vector DB: ChromaDB (self-hosted, free) or Pinecone ($0-70/month)
+- **Estimated: $2-72/month depending on scale**
+
+---
+
+## Lessons for Production
+
+1. **Hybrid > Pure ML**: Combining exact filters with semantic search prevents bad results
+2. **Categorization Quality Matters**: Invest in good product classification upfront
+3. **Metrics Must Match Use Case**: F1 designed for complete retrieval doesn't fit top-K search
+4. **Real Data is Messy**: Amazon titles inconsistent; robust categorization essential
+5. **User Experience ≠ Perfect Recall**: Showing 5 great results > 50 mediocre ones
+
+---
+
+## Acknowledgments
+
+- Dataset: Amazon product metadata (UCSD)
+- Domain expertise: Cheese Express e-commerce experience
+- Inspiration: Friend's production RAG system for code analysis
+
+---
+
+## License
+
+MIT License - free to use, modify, and distribute.

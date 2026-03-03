@@ -1,5 +1,5 @@
 """
-Multi-Modal RAG System
+Multi-Modal RAG System - FIXED WITH PERSISTENT CHROMADB
 Searches over both images and text descriptions using vision models and embeddings
 """
 from openai import OpenAI
@@ -9,7 +9,6 @@ import base64
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 import chromadb
-from chromadb.config import Settings
 
 class MultiModalRAG:
     def __init__(self):
@@ -20,19 +19,28 @@ class MultiModalRAG:
         print("Loading embedding model...")
         self.text_embedder = SentenceTransformer('all-MiniLM-L6-v2')
 
-        # Initialize ChromaDB for vector storage
-        self.chroma_client = chromadb.Client(Settings(
-            anonymized_telemetry=False,
-            is_persistent=False
-        ))
+        # Initialize ChromaDB for vector storage (PERSISTENT TO DISK)
+        self.chroma_client = chromadb.PersistentClient(
+            path="./chroma_db"
+        )
 
-        # Create collections for text and images
-        self.text_collection = self.chroma_client.create_collection(
-            name="product_descriptions"
-        )
-        self.image_collection = self.chroma_client.create_collection(
-            name="product_images"
-        )
+        # Get or create collections for text and images
+        try:
+            self.text_collection = self.chroma_client.get_collection(
+                name="product_descriptions"
+            )
+            self.image_collection = self.chroma_client.get_collection(
+                name="product_images"
+            )
+            print("Loaded existing collections from disk")
+        except:
+            self.text_collection = self.chroma_client.create_collection(
+                name="product_descriptions"
+            )
+            self.image_collection = self.chroma_client.create_collection(
+                name="product_images"
+            )
+            print("Created new collections")
 
         print("MultiModal RAG initialized!")
 
